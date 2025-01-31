@@ -5,28 +5,34 @@ What does this repository offer?
 - A fully debuggable WordPress docker instance
 - Limit of upload_max_filesize increased to upload plugins with high filesize
 
+# Modifications from Upstream
+
+This repository provides a number of QoL changes from upstream.
+
+- Builds Xdebug-enabled WP images for current WordPress (TBD: Add support for automatic WP5 setup)
+- Allows for automatic integration of custom CA certificates (e.g., for proxying WordPress itself through Burp Suite)
+- Automatically logs sent mail via Sendria (MailTrap)
+- Provides easy visual access to MySQL via Adminer
+- Automatically manages TLS setup via Caddy
+- Automatic MySQL import of a default WordPress installation with users for each role:
+    - admin:admin (Administrator)
+    - editor:editor (Editor)
+    - author:author (Author)
+    - con:con (Contributor)
+    - sub:sub (Subscriber)
+
 ## Steps to Installation
 
-1. `git clone https://github.com/dhakalananda/wp-xdebug-docker`
+0. **Optional** Install [`just`](https://github.com/casey/just?tab=readme-ov-file#packages) for convenience. 
+1. `git clone https://github.com/chazz0x0/wp-xdebug-docker`
 2. `cd wp-xdebug-docker`
-3. `docker-compose up -d`
-4. Navigate to http://localhost:8000 and set up WordPress
+3. `cp .env.example .env`
+4. Configure .env (See notes)
+5. Update domain in MySQL dump (`just set-domain <your domain>` or manually run `sed` call in `justfile:set-domain`)
+6. `docker-compose up -d`
+7. Navigate to https://wp.<your domain> and get started.
 
 XDebug is listening on port 9000. Use your preferred IDE to attach to the listener.
-
-### For MacOS
-
-For some Mac devices, using the docker-compose might install AMD version so:
-
-1. `git clone https://github.com/Automattic/wordpress-xdebug`
-2. `cd wordpress-xdebug`
-3. `docker build -t wp-debug:latest .`
-4. `cd`
-5. `git clone https://github.com/dhakalananda/wp-xdebug-docker`
-6. `cd wp-xdebug-docker`
-7. Replace the `image: automattic/wordpress-xdebug:latest` with `image: wp-debug:latest` in the docker-compose.yaml file
-8. `docker-compose up -d`
-9. Navigate to http://localhost:8000 and set up WordPress
 
 ### Attaching with VSCode:
 
@@ -53,4 +59,4 @@ Example launch.json file:
 
 For more info: https://code.visualstudio.com/docs/devcontainers/attach-container
 
-This repo makes use of https://github.com/Automattic/wordpress-xdebug image
+This repo makes use of a modified version of the https://github.com/Automattic/wordpress-xdebug image

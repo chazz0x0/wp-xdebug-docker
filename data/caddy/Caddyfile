@@ -1,0 +1,19 @@
+{
+    acme_dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+}
+
+wp.{$DOMAIN} {
+    reverse_proxy wp
+}
+
+wp5.{$DOMAIN} {
+    reverse_proxy wp5
+}
+
+adminer.{$DOMAIN} {
+    reverse_proxy adminer:8080
+}
+
+sendria.{$DOMAIN} {
+    reverse_proxy sendria:1080
+}
