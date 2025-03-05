@@ -12,13 +12,16 @@ services:
 
   wp:
     depends_on:
-    - db
+      - db
     build:
       context: .
       args:
         TAG: php8.2-apache
     volumes:
-    - ./data/wp:/var/www/html
+      - ./data/wp:/var/www/html
+    # Workaround for Xdebug integration. TBD: Fix this?
+    ports:
+      - 9050:80
     restart: on-failure
     environment:
       WORDPRESS_DB_HOST: db:3306
@@ -26,10 +29,6 @@ services:
       WORDPRESS_DB_PASSWORD: wordpress
       WORDPRESS_DEBUG: true
       WORDPRESS_CONFIG_EXTRA: |
-        @error_reporting(E_ALL);
-        @ini_set('log_errors', true);
-        define('WP_DEBUG_DISPLAY', false);
-        define('WP_DEBUG_LOG', true);
         define( 'SMTP_SERVER', 'sendria' );
         define( 'SMTP_PORT', 1025 );
 
@@ -40,11 +39,12 @@ services:
 
 # Formerly MailTrap. SMTP/Email catcher.
   sendria:
-    #image: msztolcman/sendria:v2.2.2.0
+    # No arm64 images. Just build it instead.
     build: https://github.com/msztolcman/sendria.git
     restart: unless-stopped
 
   caddy:
+    # TBD: Check if there's an image that pulls in all the DNS plugins. Build one if there isn't.
     image: ghcr.io/caddybuilds/caddy-cloudflare:latest
     restart: unless-stopped
     ports:
@@ -55,7 +55,52 @@ services:
       - ./data/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./data/caddy/config:/config
       - ./data/caddy/data:/data
+      - ./data/caddy/www:/var/www
     environment:
       # See https://github.com/CaddyBuilds/caddy-cloudflare?tab=readme-ov-file#configuration
       CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN}
       DOMAIN: ${DOMAIN}
+
+
+        # @error_reporting(E_ALL);
+        # @ini_set('log_errors', true);
+        # define('WP_DEBUG_DISPLAY', false);
+        # define('WP_DEBUG_LOG', true);
+
+# Makes use of Compose Profiles. Pass in --profile wp5 to your `docker compose` command.
+  wp5:
+    depends_on:
+      - db
+    # TBD: Fix the build? Pecl doesn't like old PHP.
+    #image: wordpress:4.9.8-php7.2-apache
+    build:
+      context: .
+      args:
+        TAG: 5.8.1-php7.4-apache
+    volumes:
+      - ./data/wp5:/var/www/html
+    ports:
+      - 9051:80
+    restart: on-failure
+    profiles:
+      - wp5
+    environment:
+      WORDPRESS_DB_HOST: db5:3306
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DEBUG: true
+      WORDPRESS_CONFIG_EXTRA: |
+        define( 'SMTP_SERVER', 'sendria' );
+        define( 'SMTP_PORT', 1025 );
+  
+  # TBD: Replace with multiple databases on one MariaDB instance.
+  db5:
+    image: mariadb:latest
+    restart: on-failure
+    profiles:
+      - wp5
+    environment:
+      MARIADB_USER: wordpress
+      MARIADB_PASSWORD: wordpress
+      MARIADB_ROOT_PASSWORD: wordpress
+      MARIADB_DATABASE: wordpress
