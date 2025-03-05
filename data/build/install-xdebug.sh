@@ -4,8 +4,6 @@ ver=$(php -r "echo implode('.', array_slice(explode('.', PHP_VERSION),0,2));")
 
 xdb=""
 
-echo $ver
-
 case "$ver" in
     "7.4" | "7.3" | "7.2")
         xdb="xdebug-3.1.6"
@@ -29,7 +27,5 @@ case "$ver" in
         xdb="xdebug"
         ;;
 esac
-
-echo $xdb
     
 pecl install $xdb 
